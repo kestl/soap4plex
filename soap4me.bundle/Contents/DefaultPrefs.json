@@ -1,0 +1,31 @@
+[
+    {
+        "id": "username",
+        "type": "text",
+        "label": "Пользователь",
+        "default": ""
+    },
+    {
+        "id": "password",
+        "type": "text",
+        "label": "Пароль",
+        "default": "",
+        "option": "hidden"
+    },
+    {
+        "id": "quality",
+        "type": "text",
+        "label": "Предпочитаемое качество",
+        "default": "SD",
+        "values": ["SD","HD","SD+HD"],
+        "type": "enum"
+    },
+	{
+        "id": "sorting",
+        "type": "text",
+        "label": "Новые эпизоды сверху",
+        "default": "да",
+        "values": ["да","нет"],
+        "type": "enum"
+    },
+]
