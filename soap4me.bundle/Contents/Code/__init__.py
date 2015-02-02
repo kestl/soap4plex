@@ -11,7 +11,7 @@ import time
 
 VERSION = 2.0
 PREFIX = "/video/soap4me"
-NAME = 'soap4.me'
+TITLE = 'soap4.me'
 ART = 'art.png'
 ICON = 'icon.png'
 BASE_URL = 'http://soap4.me/'
@@ -21,9 +21,6 @@ USER_AGENT = 'xbmc for soap'
 LOGGEDIN = False
 TOKEN = False
 SID = ''
-title1 = NAME
-title2 = ''
-TITLE = NAME
 
 def Start():
 	ObjectContainer.art = R(ART)
@@ -51,7 +48,6 @@ def Login():
 				'password' : Prefs["password"]}
 
 			obj = JSON.ObjectFromURL(LOGIN_URL, values, encoding='utf-8', cacheTime=1,)
-			#strn = JSON.StringFromObject(obj)
 		except:
 			obj=[]
 			LOGGEDIN = False
@@ -132,9 +128,7 @@ def Soaps(title2, filter):
 			summary = summary.replace('&quot;','"')
 			fan = 'http://thetvdb.com/banners/fanart/original/'+items['tvdb_id']+'-1.jpg'
 			id = items["sid"]
-			thumb=Function(Thumb, url=poster)
-			#Log.Debug('#####'+str(filter).encode('utf-8')+'#####')
-			#Log.Debug('#####'+str(filter=='unwatched').encode('utf-8')+'#####')
+			thumb = Function(Thumb, url=poster)
 			dir.add(TVShowObject(key=Callback(show_seasons, id = id, soap_title = soap_title, filter = filter, unwatched = filter=='unwatched'), rating_key = str(id), title = title, summary = summary, art = fan,rating = rating, thumb = thumb))
 		return dir
 
@@ -152,7 +146,6 @@ def show_seasons(id, soap_title, filter, unwatched = False):
 	if unwatched:
 		for episode in data:
 			if episode['watched'] == None:
-				#Log.Debug(str(episode['episode']))
 				if int(episode['season']) not in season:
 					season[int(episode['season'])] = episode['season_id']
 				if int(episode['season']) not in useason.keys():
@@ -165,15 +158,10 @@ def show_seasons(id, soap_title, filter, unwatched = False):
 			if int(episode['season']) not in season:
 				season[int(episode['season'])] = episode['season_id']
 
-	#Log.Debug(str(season))
-
 	for row in season:
-		#info = {}
 		if unwatched:
-			#title = "%s - Season %s (%s)" % (soap_title, str(row), str(len(useason[row])))
 			title = "Сезон %s (%s)" % (row, len(useason[row]))
 		else:
-			#title = "%s - Season %s" % (soap_title, str(row))
 			title = "Сезон %s" % (row)
 		season_id = str(row)
 		poster = "http://covers.s4me.ru/season/big/%s.jpg" % season[row]
@@ -189,7 +177,6 @@ def show_episodes(sid, season, filter, unwatched = False):
 	data = GET(url)
 	quality = Prefs["quality"]
 	sort = Prefs["sorting"]
-	#episode_names = {}
 	show_only_hd = False
 	unwatched = unwatched == 'True'
 
@@ -201,7 +188,7 @@ def show_episodes(sid, season, filter, unwatched = False):
 					break
 	if sort != 'да':
 		data = reversed(data)
-		
+
 	for row in data:
 		if season == row['season']:
 
@@ -213,13 +200,12 @@ def show_episodes(sid, season, filter, unwatched = False):
 				if row['watched'] != None and unwatched:
 					continue
 				else:
-					#Log.Debug('!!!!!'+str(row).encode('utf-8')+'!!!!!')
 					eid = row["eid"]
 					ehash = row['hash']
 					sid = row['sid']
 					title = ''
 					if not row['watched']:
-						title += '* ' 
+						title += '* '
 					title += "S" + str(row['season']) \
 							+ "E" + str(row['episode']) + " | " \
 							+ row['quality'].encode('utf-8') + " | " \
@@ -254,7 +240,7 @@ def episode_url(sid, eid, ehash, part):
 		params = {"what": "mark_watched", "eid": eid, "token": token}
 		data = JSON.ObjectFromURL("http://soap4.me/callback/", params, headers = {'x-api-token': Dict['token'], 'Cookie': 'PHPSESSID='+Dict['sid']})
 		return Redirect('https://dl.dropboxusercontent.com/u/589805/20150128_234617.mp4')
-	
+
 	myhash = hashlib.md5(str(token)+str(eid)+str(sid)+str(ehash)).hexdigest()
 	params = {"what": "player", "do": "load", "token":token, "eid":eid, "hash":myhash}
 
@@ -264,4 +250,3 @@ def episode_url(sid, eid, ehash, part):
 
 def GET(url):
 	return JSON.ObjectFromURL(url, headers = {'x-api-token': Dict['token']}, cacheTime = 0)
-
