@@ -160,19 +160,19 @@ def show_seasons(id, soap_title, filter, unwatched = False):
 
 	for row in season:
 		if unwatched:
-			title = "Сезон %s (%s)" % (row, len(useason[row]))
+			title = "%s сезон (%s)" % (row, len(useason[row]))
 		else:
-			title = "Сезон %s" % (row)
+			title = "%s сезон" % (row)
 		season_id = str(row)
 		poster = "http://covers.s4me.ru/season/big/%s.jpg" % season[row]
 		thumb=Function(Thumb, url=poster)
-		dir.add(SeasonObject(key=Callback(show_episodes, sid = id, season = season_id, filter=filter, unwatched = unwatched), rating_key=str(row), title = title, thumb = thumb))
+		dir.add(SeasonObject(key=Callback(show_episodes, sid = id, season = season_id, filter=filter, soap_title=soap_title, unwatched = unwatched), rating_key=str(row), title = title, thumb = thumb))
 	return dir
 
 @route(PREFIX+'/{filter}/{sid}/{season}', allow_sync=True)
-def show_episodes(sid, season, filter, unwatched = False):
+def show_episodes(sid, season, filter, soap_title, unwatched = False):
 
-	dir = ObjectContainer(title2 = 'Season %s' % (season))
+	dir = ObjectContainer(title2 = u'%s - %s сезон ' % (soap_title, season))
 	url = API_URL + 'episodes/'+sid
 	data = GET(url)
 	quality = Prefs["quality"]
@@ -224,6 +224,7 @@ def play_episode(sid, eid, ehash, row, includeExtras=0, includeRelated=0, includ
 		key=Callback(play_episode, sid = sid, eid = eid, ehash = ehash, row=row),
 		rating_key=row["eid"],
 		items=[MediaObject(
+			video_resolution = 720 if row['quality'].encode('utf-8')=='720p' else 360,
 			video_codec = VideoCodec.H264,
 			audio_codec = AudioCodec.AAC,
 			container = Container.MP4,
