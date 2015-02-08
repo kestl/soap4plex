@@ -20,10 +20,18 @@
         "values": ["SD","HD","SD+HD"],
         "type": "enum"
     },
-	{
+    {
         "id": "sorting",
         "type": "text",
         "label": "Новые эпизоды сверху",
+        "default": "да",
+        "values": ["да","нет"],
+        "type": "enum"
+    },
+    {
+        "id": "mark_watched",
+        "type": "text",
+        "label": "Автоматически отмечать просмотр эпизода",
         "default": "да",
         "values": ["да","нет"],
         "type": "enum"

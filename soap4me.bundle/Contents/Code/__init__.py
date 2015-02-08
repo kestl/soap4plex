@@ -133,7 +133,7 @@ def Soaps(title2, filter):
 		return dir
 
 
-@route(PREFIX+'/{filter}/{id}')
+@route(PREFIX+'/{filter}/{id}', unwatched=bool)
 def show_seasons(id, soap_title, filter, unwatched = False):
 
 	dir = ObjectContainer(title2 = soap_title)
@@ -141,7 +141,6 @@ def show_seasons(id, soap_title, filter, unwatched = False):
 	data = GET(url)
 	season = {}
 	useason = {}
-	unwatched = unwatched == 'True'
 
 	if unwatched:
 		for episode in data:
@@ -169,7 +168,7 @@ def show_seasons(id, soap_title, filter, unwatched = False):
 		dir.add(SeasonObject(key=Callback(show_episodes, sid = id, season = season_id, filter=filter, soap_title=soap_title, unwatched = unwatched), rating_key=str(row), title = title, thumb = thumb))
 	return dir
 
-@route(PREFIX+'/{filter}/{sid}/{season}', allow_sync=True)
+@route(PREFIX+'/{filter}/{sid}/{season}', allow_sync=True, unwatched=bool)
 def show_episodes(sid, season, filter, soap_title, unwatched = False):
 
 	dir = ObjectContainer(title2 = u'%s - %s сезон ' % (soap_title, season))
@@ -178,7 +177,6 @@ def show_episodes(sid, season, filter, soap_title, unwatched = False):
 	quality = Prefs["quality"]
 	sort = Prefs["sorting"]
 	show_only_hd = False
-	unwatched = unwatched == 'True'
 
 	if quality == "HD":
 		for episode in data:
@@ -204,43 +202,51 @@ def show_episodes(sid, season, filter, soap_title, unwatched = False):
 					ehash = row['hash']
 					sid = row['sid']
 					title = ''
-					if not row['watched']:
+					if not row['watched'] and not unwatched:
 						title += '* '
 					title += "S" + str(row['season']) \
 							+ "E" + str(row['episode']) + " | " \
 							+ row['quality'].encode('utf-8') + " | " \
 							+ row['translate'].encode('utf-8') + " | " \
 							+ row['title_en'].encode('utf-8').replace('&#039;', "'").replace("&amp;", "&").replace('&quot;','"')
-					poster = "http://covers.s4me.ru/season/big/%s.jpg"%row['season_id']
+					poster = "http://covers.s4me.ru/season/big/%s.jpg" % row['season_id']
 					summary = row['spoiler']
-					thumb=Function(Thumb, url=poster)
-					dir.add(EpisodeObject(key=Callback(play_episode, sid = sid, eid = eid, ehash = ehash, row=row), rating_key=row["eid"], title = title, index=int(row['episode']), thumb = thumb, summary = summary, items=[MediaObject(parts=[PartObject(key=Callback(episode_url, sid=sid, eid=eid, ehash=ehash, part=0)), PartObject(key=Callback(episode_url, sid=sid, eid=eid, ehash=ehash, part=1))])]))
+					thumb = Function(Thumb, url=poster)
+					dir.add(EpisodeObject(
+						key=Callback(play_episode, sid = sid, eid = eid, ehash = ehash, row=row),
+						rating_key='soap4me' + row["eid"],
+						title=title,
+						index=int(row['episode']),
+						thumb=thumb,
+						summary=summary,
+						items=[MediaObject(parts=[PartObject(key=Callback(episode_url, sid=sid, eid=eid, ehash=ehash, part=0)), PartObject(key=Callback(episode_url, sid=sid, eid=eid, ehash=ehash, part=1))])]
+					))
 	return dir
-
 
 def play_episode(sid, eid, ehash, row, includeExtras=0, includeRelated=0, includeRelatedCount=0):
 	oc = ObjectContainer()
 	oc.add(EpisodeObject(
 		key=Callback(play_episode, sid = sid, eid = eid, ehash = ehash, row=row),
-		rating_key=row["eid"],
+		rating_key='soap4me' + row["eid"],
 		items=[MediaObject(
-			video_resolution = 720 if row['quality'].encode('utf-8')=='720p' else 360,
+			video_resolution = 720 if row['quality'].encode('utf-8')=='720p' else 400,
 			video_codec = VideoCodec.H264,
 			audio_codec = AudioCodec.AAC,
 			container = Container.MP4,
 			optimized_for_streaming = True,
+			audio_channels = 2,
 			parts = [PartObject(key=Callback(episode_url, sid=sid, eid=eid, ehash=ehash, part=0)), PartObject(key=Callback(episode_url, sid=sid, eid=eid, ehash=ehash, part=1))]
 		)]
 	))
 	return oc
 
-
 def episode_url(sid, eid, ehash, part):
 	token = Dict['token']
 	if part==1:
-		params = {"what": "mark_watched", "eid": eid, "token": token}
-		data = JSON.ObjectFromURL("http://soap4.me/callback/", params, headers = {'x-api-token': Dict['token'], 'Cookie': 'PHPSESSID='+Dict['sid']})
-		return Redirect('https://dl.dropboxusercontent.com/u/589805/20150128_234617.mp4')
+		if Prefs["mark_watched"]=='да':
+			params = {"what": "mark_watched", "eid": eid, "token": token}
+			data = JSON.ObjectFromURL("http://soap4.me/callback/", params, headers = {'x-api-token': Dict['token'], 'Cookie': 'PHPSESSID='+Dict['sid']})
+		return Redirect('https://soap4.me/assets/blank/blank1.mp4')
 
 	myhash = hashlib.md5(str(token)+str(eid)+str(sid)+str(ehash)).hexdigest()
 	params = {"what": "player", "do": "load", "token":token, "eid":eid, "hash":myhash}
