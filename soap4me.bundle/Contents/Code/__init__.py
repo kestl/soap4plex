@@ -114,6 +114,8 @@ def Soaps(title2, filter):
 			url = API_URL + 'soap/my/'
 		obj = GET(url)
 
+		obj=sorted(obj, key=lambda k: k['title'])
+
 		for items in obj:
 			if filter == 'unwatched' and items["unwatched"] == None:
 				continue
@@ -141,6 +143,9 @@ def show_seasons(id, soap_title, filter, unwatched = False):
 	data = GET(url)
 	season = {}
 	useason = {}
+	s_length = {}
+	
+	Log.Debug(str(data))
 
 	if unwatched:
 		for episode in data:
@@ -156,6 +161,10 @@ def show_seasons(id, soap_title, filter, unwatched = False):
 		for episode in data:
 			if int(episode['season']) not in season:
 				season[int(episode['season'])] = episode['season_id']
+				s_length[int(episode['season'])] = [episode['episode'],]
+			else:
+				if episode['episode'] not in s_length[int(episode['season'])]:
+					s_length[int(episode['season'])].append(episode['episode'])
 
 	for row in season:
 		if unwatched:
@@ -165,7 +174,7 @@ def show_seasons(id, soap_title, filter, unwatched = False):
 		season_id = str(row)
 		poster = "http://covers.s4me.ru/season/big/%s.jpg" % season[row]
 		thumb=Function(Thumb, url=poster)
-		dir.add(SeasonObject(key=Callback(show_episodes, sid = id, season = season_id, filter=filter, soap_title=soap_title, unwatched = unwatched), rating_key=str(row), title = title, thumb = thumb))
+		dir.add(SeasonObject(key=Callback(show_episodes, sid = id, season = season_id, filter=filter, soap_title=soap_title, unwatched = unwatched), episode_count=len(s_length[row]) if s_length else len(useason[row]), show=soap_title, rating_key=str(row), title = title, thumb = thumb))
 	return dir
 
 @route(PREFIX+'/{filter}/{sid}/{season}', allow_sync=True, unwatched=bool)
