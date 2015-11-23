@@ -265,4 +265,4 @@ def episode_url(sid, eid, ehash, part):
 		return Redirect("http://%s.soap4.me/%s/%s/%s/" % (data['server'], token, eid, myhash))
 
 def GET(url):
-	return JSON.ObjectFromURL(url, headers = {'x-api-token': Dict['token']}, cacheTime = 0)
+	return JSON.ObjectFromURL(url, headers = {'x-api-token': Dict['token'], 'Cookie': 'PHPSESSID='+Dict['sid']}, cacheTime = 0)
