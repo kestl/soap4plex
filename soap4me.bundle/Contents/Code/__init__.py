@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # created by sergio
-# updated by kestl1st@gmail.com (@kestl) v.1.2.1 2014-06-09
+# updated by kestl1st@gmail.com (@kestl) v.1.2.3 2016-08-01
 # updated by sergio v.1.2.2 2014-08-28
 
 import re,urllib2,base64,hashlib,md5,urllib
@@ -144,8 +144,8 @@ def show_seasons(id, soap_title, filter, unwatched = False):
 	season = {}
 	useason = {}
 	s_length = {}
-	
-	Log.Debug(str(data))
+
+	#Log.Debug(str(data))
 
 	if unwatched:
 		for episode in data:
@@ -221,6 +221,9 @@ def show_episodes(sid, season, filter, soap_title, unwatched = False):
 					poster = "http://covers.s4me.ru/season/big/%s.jpg" % row['season_id']
 					summary = row['spoiler']
 					thumb = Function(Thumb, url=poster)
+					parts = [PartObject(key=Callback(episode_url, sid=sid, eid=eid, ehash=ehash, part=0))]
+					if Prefs["mark_watched"]=='да':
+						parts.append(PartObject(key=Callback(episode_url, sid=sid, eid=eid, ehash=ehash, part=1)))
 					dir.add(EpisodeObject(
 						key=Callback(play_episode, sid = sid, eid = eid, ehash = ehash, row=row),
 						rating_key='soap4me' + row["eid"],
@@ -228,12 +231,15 @@ def show_episodes(sid, season, filter, soap_title, unwatched = False):
 						index=int(row['episode']),
 						thumb=thumb,
 						summary=summary,
-						items=[MediaObject(parts=[PartObject(key=Callback(episode_url, sid=sid, eid=eid, ehash=ehash, part=0)), PartObject(key=Callback(episode_url, sid=sid, eid=eid, ehash=ehash, part=1))])]
+						items=[MediaObject(parts=parts)]
 					))
 	return dir
 
-def play_episode(sid, eid, ehash, row, includeExtras=0, includeRelated=0, includeRelatedCount=0):
+def play_episode(sid, eid, ehash, row, *args, **kwargs):
 	oc = ObjectContainer()
+	parts = [PartObject(key=Callback(episode_url, sid=sid, eid=eid, ehash=ehash, part=0))]
+	if Prefs["mark_watched"] == 'да':
+		parts.append(PartObject(key=Callback(episode_url, sid=sid, eid=eid, ehash=ehash, part=1)))
 	oc.add(EpisodeObject(
 		key=Callback(play_episode, sid = sid, eid = eid, ehash = ehash, row=row),
 		rating_key='soap4me' + row["eid"],
@@ -244,23 +250,23 @@ def play_episode(sid, eid, ehash, row, includeExtras=0, includeRelated=0, includ
 			container = Container.MP4,
 			optimized_for_streaming = True,
 			audio_channels = 2,
-			parts = [PartObject(key=Callback(episode_url, sid=sid, eid=eid, ehash=ehash, part=0)), PartObject(key=Callback(episode_url, sid=sid, eid=eid, ehash=ehash, part=1))]
+			parts = parts
 		)]
 	))
 	return oc
 
 def episode_url(sid, eid, ehash, part):
 	token = Dict['token']
-	if part==1:
-		if Prefs["mark_watched"]=='да':
-			params = {"what": "mark_watched", "eid": eid, "token": token}
-			data = JSON.ObjectFromURL("http://soap4.me/callback/", params, headers = {'x-api-token': Dict['token'], 'Cookie': 'PHPSESSID='+Dict['sid']})
+	if part == 1:
+		params = {"what": "mark_watched", "eid": eid, "token": token}
+		data = JSON.ObjectFromURL("http://soap4.me/callback/", params, headers = {'x-api-token': Dict['token'], 'Cookie': 'PHPSESSID='+Dict['sid']})
 		return Redirect('https://soap4.me/assets/blank/blank1.mp4')
 
 	myhash = hashlib.md5(str(token)+str(eid)+str(sid)+str(ehash)).hexdigest()
 	params = {"what": "player", "do": "load", "token":token, "eid":eid, "hash":myhash}
 
 	data = JSON.ObjectFromURL("http://soap4.me/callback/", params, headers = {'x-api-token': Dict['token'], 'Cookie': 'PHPSESSID='+Dict['sid']})
+	#Log.Debug('!!!!!!!!!!!!!!!!!! === ' + str(data))
 	if data["ok"] == 1:
 		return Redirect("http://%s.soap4.me/%s/%s/%s/" % (data['server'], token, eid, myhash))
 
